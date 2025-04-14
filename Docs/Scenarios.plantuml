@@ -1,0 +1,190 @@
+@startuml UseCases
+left to right direction
+title Use Case View
+
+actor User
+usecase "Add Task" as UC01
+usecase "Update Task" as UC02
+usecase "Delete Task" as UC03
+usecase "Mark in Progress" as UC04
+usecase "Mark Done" as UC05
+usecase "List" as UC06
+usecase "List ToDo" as UC07
+usecase "List In Progress" as UC08
+usecase "List Done" as UC09
+usecase "Exit" as UC10
+
+User --> UC01
+User --> UC02
+User --> UC03
+User --> UC04
+User --> UC05
+User --> UC06
+User --> UC07
+User --> UC08
+User --> UC09
+User --> UC10
+@enduml
+
+@startuml Add Task Specification
+title Add Task Specification
+
+state " " as A
+state " " as B
+state " " as D
+state " " as E
+state " " as F
+state isValid <<choice>>
+
+[*] --> APPLICATION_STARTED
+    APPLICATION_STARTED --> A : user requests to execute a add task command
+    A --> B : system allows to enter the command and\n allows to request execute add task command
+    B --> isValid : user enter add task command and\n requests to execute
+        note on link
+            task-cli add "Buy groceries"
+        endnote
+        isValid --> D : [yes]
+        D --> [*] : systen display a success message
+            note on link
+                the command was successfully executed
+            endnote
+    isValid --> E : [not]
+    E --> F : system display a error message
+        note on link
+            the command could not be executed
+            errors:
+                - The command does not exist
+                - the “add task “ command must have an argument “description”
+                - the description cannot be empty or blank space
+        endnote
+    F --> [*]
+@enduml
+
+@startuml Update Task Specification
+title Update Task Specification
+
+state " " as A
+state " " as B
+state " " as BA
+state " " as D
+state " " as E
+state " " as F
+state isValid <<choice>>
+
+[*] --> APPLICATION_STARTED
+    APPLICATION_STARTED --> A : user requests to execute update task command
+    A --> B : system allows to enter the command and\n allows to request execute update task command
+    B --> BA : user enter update task command and\n requests to execute
+        note on link
+            task-cli update 1 "Buy groceries and cook dinner"
+        endnote
+    BA --> isValid : [isValid]
+        isValid --> C : [yes]
+        C --> [*] : system display a success message
+    isValid --> D : [not]
+    D --> F : system displays a error message
+        note on link
+            errors:
+                - The command does not exist
+                - The update command must have an "id" argument 
+                        and a "description" argument
+                - The task with the "id = 1" does not exist
+        endnote
+    F --> [*]    
+@enduml
+
+@startuml Delete Task Specification
+title Delete Task Specification
+
+state " " as A
+state " " as B
+state " " as C
+state " " as D
+state " " as E
+state " " as F
+state isValid <<choice>>
+state exists <<choice>>
+
+[*] --> APPLICATION_STARTED
+    APPLICATION_STARTED --> A : user requests to execute delete task command
+    A --> B : system allows to enter the command and\n allows to request execute delete task command
+    B --> C : user enter delete task command and\n requests to execute
+        note on link
+            task-cli delete 1
+        endnote
+    C --> isValid : [the command exists and does it have an id argument??]
+        isValid --> exists : [yes]\n [the task exists??]
+            exists --> D : [yes]
+            D --> F : the system displays a success message
+        exists --> F : the system displays a message "task not found" 
+    isValid --> E : system display a error message
+    note on link
+        - The command does not exist
+        - the update command must have an "id" argument
+    endnote
+    E --> F
+F --> [*]
+@enduml
+
+@startuml Mark in progress Specification
+title Mark in progress Specification
+
+state " " as A
+state " " as B
+state " " as C
+state " " as E
+state " " as F
+state isValid <<choice>>
+state exists <<choice>>
+
+[*] --> APPLICATION_STARTED
+    APPLICATION_STARTED --> A : user requests to execute mark in progress command
+    A --> B : system allows to enter the command and\n allows to request execute mark in progress command
+    B --> C : user enter mark in progress command and\n requests to execute
+        note on link
+            task-cli > mark-in-progress 1
+        endnote
+    C --> isValid : [is valid when: the command exists and it hava an id argument]
+        isValid --> exists : [yes]\n [Does the task exist?]
+            exists --> E : [yes]\n the system display a success message
+        exists --> F : the system displaya message "task not found"
+    isValid --> F : [not]\n the system display an error message
+        note on link
+            errors:
+            - The command does not exist
+            - the mark in progress command must have an "id" argument
+        endnote
+F --> [*]
+@enduml
+
+@startuml Mark done Specification
+title Mark done Specification
+
+state " " as A
+state " " as B
+state " " as C
+state " " as D
+state " " as E
+state isValid <<choice>>
+state exists <<choice>>
+
+[*] --> APPLICATION_STARTED
+    APPLICATION_STARTED --> A : user requests to execute mark done command
+    A --> B : system allows to enter the command and\n allows to request execute mark done command
+    B --> C : user enter done progress command and\n requests to execute
+        note on link
+            task-cli > mark-done 1
+        endnote
+    C --> isValid : [is valid when the command exists and it have an id argument]
+        isValid --> exists : yes\n [does the task exist?]
+            exists --> D : yes\n the system display a success message
+        exists --> D : no\n system display a message "task not found"
+    isValid --> E : not\n 
+    E --> D : system display an error message
+        note on link
+            errors:
+            - The command does not exist
+            - the mark in progress command must have an "id" argument
+        endnote
+D --> [*]
+@enduml

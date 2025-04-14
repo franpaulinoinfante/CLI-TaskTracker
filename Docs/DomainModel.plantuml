@@ -1,0 +1,100 @@
+@startuml Domain Model
+title vocabulary
+
+TaskTracker *--> "0..*" Task
+TaskTracker *--> TaskJsonFile 
+TaskTracker *--> ConsoleCommandHandler
+
+ConsoleCommandHandler ..> Task
+ConsoleCommandHandler --> TaskJsonFile
+
+TaskJsonFile o--> "0..*" Task : store
+@enduml
+
+@startuml Context
+left to right direction
+title Context
+
+state commandSelection <<choice>>
+state ":addTask" as AddTask
+state ":updateTask" as UpdateTask
+state ":deleteTask" as DeleteTask
+state ":markAsInProgress" as MarkAsInProgress
+state ":markAsDone" as MarkAsDone
+state ":list" as List
+state ":list todo" as ListTodo
+state ":list in-progress" as ListInProgress
+state ":list done" as ListDone
+state ":exit" as Exit
+
+[*] --> APPLICATION_STARTED
+    APPLICATION_STARTED --> commandSelection : introduce un comando
+    commandSelection --> AddTask
+        note on link
+            task-cli add "Buy groceries"
+        endnote 
+    commandSelection --> UpdateTask
+        note on link
+            task-cli update 1 "Buy groceries and cook dinner"
+        endnote
+    commandSelection --> DeleteTask
+        note on link
+            task-cli delete 1
+        endnote
+    commandSelection --> MarkAsInProgress
+        note on link
+            task-cli mark-in-progress 1
+        endnote
+    commandSelection --> MarkAsDone
+        note on link
+            task-cli mark-done 4
+        endnote
+    commandSelection --> List
+        note on link
+            task-cli list
+        endnote
+    commandSelection --> ListTodo
+        note on link
+            task-cli list todo
+        endnote
+    commandSelection --> ListInProgress
+        note on link
+            task-cli list in-progress
+        endnote
+    commandSelection --> ListDone
+        note on link
+            task-cli list done
+        endnote
+    commandSelection --> Exit
+
+    AddTask --> TASK_ADDED
+    TASK_ADDED -up-> APPLICATION_STARTED
+
+    UpdateTask --> TASK_UPDATED
+    TASK_UPDATED -up-> APPLICATION_STARTED
+
+    DeleteTask --> TASK_DELETED    
+    TASK_DELETED -up-> APPLICATION_STARTED
+
+    MarkAsInProgress --> MARKED_AS_IN_PROGRESS
+    MARKED_AS_IN_PROGRESS -up-> APPLICATION_STARTED
+
+    MarkAsDone --> MARKED_AS_DONE
+    MARKED_AS_DONE -up-> APPLICATION_STARTED
+
+    List --> TASK_LISTED
+    TASK_LISTED -up-> APPLICATION_STARTED
+
+    ListTodo --> TASK_TO_DO_LISTED
+    TASK_TO_DO_LISTED -up-> APPLICATION_STARTED
+
+    ListInProgress --> TASK_IN_PROGRESS_LISTED
+    TASK_IN_PROGRESS_LISTED -up-> APPLICATION_STARTED
+
+    ListDone --> TASK_DONE_LISTED
+    TASK_DONE_LISTED -up-> APPLICATION_STARTED
+
+    Exit --> [*]
+
+
+@enduml
