@@ -1,0 +1,12 @@
+@startuml Domain Model
+title vocabulary
+
+TaskTracker *--> "0..*" Task
+TaskTracker *--> TaskJsonFile 
+TaskTracker *--> ConsoleCommandHandler
+
+ConsoleCommandHandler --> Task
+ConsoleCommandHandler --> TaskJsonFile
+
+TaskJsonFile o--> "0..*" Task : store
+@enduml
