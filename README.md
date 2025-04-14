@@ -25,3 +25,29 @@ Task tracker is a project used to track and manage your tasks. In this task, you
 - Use the native file system module of your programming language to interact with the JSON file.
 - Do not use any external libraries or frameworks to build this project.
 - Ensure to handle errors and edge cases gracefully.
+
+## Domain Model
+### Vocabulary
+![image](https://github.com/user-attachments/assets/0f491d99-d35e-4505-a8d3-7ed2332076df)
+
+### Context
+![image](https://github.com/user-attachments/assets/b8328cac-f765-41ef-a692-915b119a4175)
+
+## Scenarios
+### Use Cases
+![image](https://github.com/user-attachments/assets/d1702d30-2035-4dff-b775-abd4f6cd5385)
+
+### Add Task Specification
+![image](https://github.com/user-attachments/assets/93032f11-579f-4346-a6c3-b68da9fce247)
+
+### Update Task Specification
+![image](https://github.com/user-attachments/assets/a4bb1d24-1c0b-4807-b5b2-dcd92b9027ef)
+
+### Delete Task Specification
+![image](https://github.com/user-attachments/assets/460c7452-8250-4fe7-a245-c4e82d16296c)
+
+### Mark in progress Specification
+![image](https://github.com/user-attachments/assets/187259f3-135d-4fd2-a2af-151dee0c0dd8)
+
+### Mark done Specification
+![image](https://github.com/user-attachments/assets/2679b806-082f-4242-b9f6-ea471ff37c1e)
