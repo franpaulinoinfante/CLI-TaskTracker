@@ -51,3 +51,7 @@ Task tracker is a project used to track and manage your tasks. In this task, you
 
 ### Mark done Specification
 ![image](https://github.com/user-attachments/assets/2679b806-082f-4242-b9f6-ea471ff37c1e)
+
+### UI
+![Screenshot From 2025-04-14 16-49-59](https://github.com/user-attachments/assets/9e33b2a3-73c7-47c9-a859-84b7c4144fd6)
+
