@@ -8,7 +8,7 @@ Task tracker is a project used to track and manage your tasks. In this task, you
 - Accept user actions and inputs as arguments,
 - Store the tasks in a JSON file. 
 
-## The user should be able to:
+### The user should be able to:
 - Add, Update, and Delete tasks
 - Default status as ToDo
 - Mark a task as in progress or done
