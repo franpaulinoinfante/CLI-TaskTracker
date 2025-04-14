@@ -1,2 +1,14 @@
-﻿// See https://aka.ms/new-console-template for more information
-Console.WriteLine("Hello, World!");
+﻿
+new TaskTracker().Manage();
+
+internal class TaskTracker
+{
+    public TaskTracker()
+    {
+    }
+
+    internal void Manage()
+    {
+        throw new NotImplementedException();
+    }
+}
