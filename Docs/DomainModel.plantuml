@@ -3,10 +3,7 @@ title vocabulary
 
 TaskTracker *--> "0..*" Task
 TaskTracker *--> TaskJsonFile 
-TaskTracker *--> ConsoleCommandHandler
-
-ConsoleCommandHandler ..> Task
-ConsoleCommandHandler --> TaskJsonFile
+TaskTracker *--> CommandParser
 
 TaskJsonFile o--> "0..*" Task : store
 @enduml
