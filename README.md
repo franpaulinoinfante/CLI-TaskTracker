@@ -28,7 +28,7 @@ Task tracker is a project used to track and manage your tasks. In this task, you
 
 ## Domain Model
 ### Vocabulary
-![image](https://github.com/user-attachments/assets/0f491d99-d35e-4505-a8d3-7ed2332076df)
+![image](https://github.com/user-attachments/assets/ebda3a2c-0b26-4fe7-a066-d082a3630236)
 
 ### Context
 ![image](https://github.com/user-attachments/assets/b8328cac-f765-41ef-a692-915b119a4175)
