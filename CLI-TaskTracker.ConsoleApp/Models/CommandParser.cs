@@ -65,7 +65,7 @@ public class CommandParser
             case "update":
                 if (!IsValidArgumentsForUpdate(arguments))
                 {
-                    throw new ArgumentException("El comando 'update' debe tener dos parametros.");
+                    throw new ArgumentException("El comando 'update' debe tener doss parametros.");
                 }
 
                 return arguments.Split(' ', 2);
