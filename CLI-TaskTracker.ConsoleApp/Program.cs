@@ -46,7 +46,8 @@ internal class TaskTracker
             switch (command)
             {
                 case "add":
-                    TaskItem taskITem = new () {Id = ++_id, Description = arguments[0]};
+                    _id = _taskJsonFile.GetMaxTaskIdManual() + 1;
+                    TaskItem taskITem = new () { Id = _id, Description = arguments[0]};
                     _taskJsonFile.AddTask(taskITem);
                     _taskItems.Add(taskITem);
                     Console.WriteLine("Tarea agregada");

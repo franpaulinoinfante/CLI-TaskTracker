@@ -1,4 +1,5 @@
 using System;
+using System.Text.RegularExpressions;
 
 namespace CLI_TaskTracker.ConsoleApp.Models;
 
@@ -55,7 +56,14 @@ public class CommandParser
         switch (command)
         {
             case "add":
-                return arguments.Length > 0 ? [arguments] : throw new ArgumentException("El comando 'add' debe tener una descripción.");
+                if (!Regex.IsMatch(arguments, @"^""[^""]+""\s*$"))
+                {
+                    throw new ArgumentException("para agregar una tarea, solo debe introducir la descripción.");
+                }
+
+                return arguments.Length > 0 ? 
+                    [arguments] : 
+                    throw new ArgumentException("El comando 'add' debe tener una descripción.");
             case "update":
                 string[] parameters = arguments.Split(' ', 2);
                 if (parameters.Length != 2)
