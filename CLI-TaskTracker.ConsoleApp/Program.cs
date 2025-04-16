@@ -17,23 +17,23 @@ internal class TaskTracker
 
     internal void Manage()
     {
-        CommandParser commandParser = new CommandParser();
-        DisplayHeaderMessages(commandParser);
-        (string command, string[]? parameters) result;
+        CommandParser commandParser = new();
+        DisplayHeaderMessages();
+        (string command, string[]? parameters) result = (result.command = string.Empty, default);
         do
         {
             Console.Write("Task Tracker CLI > ");
             string input = Console.ReadLine() ?? string.Empty;
 
-            result = commandParser.Parser(input);
-            if (string.IsNullOrWhiteSpace(result.command))
+            try
             {
-                Console.WriteLine("Error, comando introducido no valido");
-            }
-            else
-            {
+                result = commandParser.Parser(input);
                 ProcessCommand(result.command, result.parameters!);
-            }        
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error! {ex.Message}");
+            }
         } while (!result.command.Equals("salir", StringComparison.CurrentCultureIgnoreCase));
     }
 
@@ -58,10 +58,16 @@ internal class TaskTracker
         }
     }
 
-    private void DisplayHeaderMessages(CommandParser commandParser)
+    private static void Display(TaskItem taskItem)
+    {
+        Console.WriteLine("Id\tDescripción\t\tEstado\tCreada\t\t\tUltima Actualización");
+        Console.WriteLine($"{taskItem.Id}\t{taskItem.Description}\t{taskItem.Status}\t{taskItem.CreatedAt}\t{taskItem.UpdatedAt}");
+    }
+
+    private static void DisplayHeaderMessages()
     {
         Console.Title = "Task Tracker CLI";
         Console.WriteLine("Bienvenido a Task Tracker CLI");
-        commandParser.DisplayCommands();
+        CommandParser.DisplayCommands();
     }
 }
