@@ -6,14 +6,14 @@ public class TaskItem
     {
         Status = "ToDo";
         CreatedAt = DateTime.Now;
-        UpdatedAt = DateTime.Now;
+        ModifyUpdatedAt();
     }
 
     public int Id { get; init; }
     public required string Description { get; set; }
-    public string Status { get; private set; }
+    public string Status { get; set; }
     public DateTime CreatedAt { get; init; }
-    public DateTime UpdatedAt { get; private set; }
+    public DateTime UpdatedAt { get; set; }
 
     public void MarkAsInProgress()
     {
@@ -21,7 +21,7 @@ public class TaskItem
         ModifyUpdatedAt();
     }
 
-    public void ModifyUpdatedAt()
+    public void ModifyUpdatedAt() 
     {
         UpdatedAt = DateTime.Now;
     }

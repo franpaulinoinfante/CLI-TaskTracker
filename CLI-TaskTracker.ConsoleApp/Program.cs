@@ -1,18 +1,20 @@
 ﻿using CLI_TaskTracker.ConsoleApp.Models;
 
-var path = Directory.GetCurrentDirectory();
-
 new TaskTracker().Manage();
 
 internal class TaskTracker
 {
     private readonly List<TaskItem> _taskItems;
+    private int _id;
+
     private TaskJsonFile _taskJsonFile;
 
     public TaskTracker()
     {
-        _taskItems = [];
-        _taskJsonFile = new(_taskItems);
+        _taskItems = new List<TaskItem>();
+        _id = default;
+
+        _taskJsonFile = new();
     }
 
     internal void Manage()
@@ -44,7 +46,7 @@ internal class TaskTracker
             switch (command)
             {
                 case "add":
-                    TaskItem taskITem = new () {Id = _taskItems.Count + 1, Description = arguments[0]};
+                    TaskItem taskITem = new () {Id = ++_id, Description = arguments[0]};
                     _taskJsonFile.AddTask(taskITem);
                     _taskItems.Add(taskITem);
                     Console.WriteLine("Tarea agregada");

@@ -1,23 +1,28 @@
 using System;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace CLI_TaskTracker.ConsoleApp.Models;
 
 public class TaskJsonFile
 {
-    private const string WindowsPath = "D:\\Repos\\CLI-TaskTracker\\CLI-TaskTracker.ConsoleApp\\Data\\TaskJsonFile.json"; 
-    private const string FedoraPath = "/home/franpaulino/Repos/CLI-TaskTracker/CLI-TaskTracker.ConsoleApp/Data/TaskJsonFile";
+    private const string WindowsPath = "D:\\Repos\\CLI-TaskTracker\\CLI-TaskTracker.ConsoleApp\\Data\\TaskJsonFile.json";
+    private const string FedoraPath = "/home/franpaulino/Repos/CLI-TaskTracker/CLI-TaskTracker.ConsoleApp/Data/TaskJsonFile.json";
 
     private const string FilePath = TaskJsonFile.FedoraPath;
-    private List<TaskItem> _taskItems;
-
-    public TaskJsonFile(List<TaskItem> taskItems)
+    
+    public TaskJsonFile()
     {
-        _taskItems = taskItems;
+        TaskJsonFile.CreateTaskJsonFile();
 
+        FindTaskItemById(1);
+    }
+
+    private static void CreateTaskJsonFile()
+    {
         if (!File.Exists(TaskJsonFile.FilePath))
         {
-            File.WriteAllText(Path.Combine(TaskJsonFile.FilePath), string.Empty);
+            File.WriteAllText(Path.Combine(TaskJsonFile.FilePath), "TaskJsonFile.json");
         }
     }
 
@@ -71,14 +76,249 @@ public class TaskJsonFile
         File.WriteAllText(FilePath, updateJson, Encoding.UTF8);
     }
 
-    private static string ParseToJson(TaskItem taskItem)
+    private string ParseToJson(TaskItem taskItem)
     {
         return $@"{{""Id"":{taskItem.Id},""Description"":""{EscapeJsonString(taskItem.Description)}"", ""Status"":""{EscapeJsonString(taskItem.Status)}"", ""CreatedAt"":""{taskItem.CreatedAt:yyyy-MM-ddTHH:mm:ssZ}"",""UpdatedAt"":""{taskItem.UpdatedAt:yyyy-MM-ddTHH:mm:ssZ}""}}";
     }
 
-    private static string EscapeJsonString(string rawString)
+    private string EscapeJsonString(string rawString)
     {
-
-        return rawString.Replace("\"", "\\\"");
+        return rawString.Replace("\"", "\"");
     }
+
+    public TaskItem? FindTaskItemById(int taskItemId)
+    {
+        if (!File.Exists(TaskJsonFile.FilePath))
+        {
+            return null;
+        }
+
+        // obtener el texto json
+        string jsonContent = File.ReadAllText(TaskJsonFile.FilePath);
+
+        // Intentar encontrar todos los objetos JSON dentro del array
+        MatchCollection matches = Regex.Matches(jsonContent, @"\{[^}]*\}");
+        if (string.IsNullOrWhiteSpace(jsonContent) || !matches.Any())
+        {
+            return null;
+        }
+
+        var result = MapTaskJsonToTaskItem(matches, taskItemId);
+
+        return MapTaskJsonToTaskItem(matches, taskItemId);
+    }
+
+    private TaskItem? MapTaskJsonToTaskItem(MatchCollection matches, int taskItemId)
+    {
+        foreach (Match match in matches)
+        {
+            string jsonObject = match.Value;
+
+            TryParseTaskItem(jsonObject, out TaskItem? task);
+
+            return task; // No se encontró ningún TaskItem con el Id especificado
+
+            // Extraer el valor del "Id" usando una expresión regular básica
+            // Match idMatch = Regex.Match(jsonObject, @"""Id"":\s*(\d+)");
+            // if (idMatch.Success && int.TryParse(idMatch.Groups[1].Value, out int currentId) && currentId == taskItemId)
+            // {
+            //     // Si encontramos el Id, intentamos extraer las otras propiedades de forma similar
+            //     string description = ExtractPropertyValue(jsonObject, "Description")!;
+            //     string status = ExtractPropertyValue(jsonObject, "Status")!;
+            //     DateTime createdAt = ExtractDateTimePropertyValue(jsonObject, "CreatedAt");
+            //     DateTime updatedAt = ExtractDateTimePropertyValue(jsonObject, "UpdatedAt");
+
+            //     return new TaskItem
+            //     {
+            //         Id = currentId,
+            //         Description = description ?? string.Empty,
+            //         Status = status,
+            //         CreatedAt = createdAt,
+            //         UpdatedAt = updatedAt
+            //     };
+            // }
+        }
+
+        return null;
+    }
+
+
+    private bool TryParseTaskItem(string jsonObject, out TaskItem? task)
+    {
+        task = null;
+
+        // Extraer el Id
+        Match idMatch = Regex.Match(jsonObject, @"""Id"":\s*(\d+)");
+        if (!idMatch.Success || !int.TryParse(idMatch.Groups[1].Value, out int id))
+        {
+            return false;
+        }
+
+        // Extraer la Descripción
+        string? description = ExtractPropertyValue(jsonObject, "Description");
+        if (description == null) return false;
+
+        // Extraer el Status
+        string? status = ExtractPropertyValue(jsonObject, "Status");
+        if (status == null) status = "ToDo"; // Valor por defecto si no se encuentra
+
+        // Extraer CreatedAt
+        DateTime createdAt = ExtractDateTimePropertyValue(jsonObject, "CreatedAt");
+
+        // Extraer UpdatedAt
+        DateTime updatedAt = ExtractDateTimePropertyValue(jsonObject, "UpdatedAt");
+
+        task = new TaskItem
+        {
+            Id = id,
+            Description = description,
+            Status = status,
+            CreatedAt = createdAt,
+            UpdatedAt = updatedAt
+        };
+
+        return true;
+    }
+
+    private string? ExtractPropertyValue(string jsonObject, string propertyName)
+    {
+        string pattern = $@"""{propertyName}"":\s*""([^""]*)""";
+        Match match = Regex.Match(jsonObject, pattern);
+        return match.Success ? match.Groups[1].Value : null;
+    }
+    private DateTime ExtractDateTimePropertyValue(string jsonObject, string propertyName)
+    {
+        string pattern = $@"""{propertyName}"":\s*""([^""]*)""";
+        Match match = Regex.Match(jsonObject, pattern);
+        if (match.Success && DateTime.TryParseExact(match.Groups[1].Value, "yyyy-MM-ddTHH:mm:ssZ", null, System.Globalization.DateTimeStyles.AssumeLocal, out DateTime parsedDateTime))
+        {
+            return parsedDateTime;
+        }
+
+        return default;
+    }
+
+    public List<TaskItem> GetAllTasksFromFile()
+    {
+        List<TaskItem> tasks = new List<TaskItem>();
+
+        if (!File.Exists(TaskJsonFile.FedoraPath))
+        {
+            Console.WriteLine("El archivo de tareas no existe.");
+            return tasks;
+        }
+
+        string jsonContent = File.ReadAllText(TaskJsonFile.FedoraPath);
+
+        // Intentar encontrar todos los objetos JSON dentro del array
+        MatchCollection matches = Regex.Matches(jsonContent, @"\{[^}]*\}");
+
+        foreach (Match match in matches)
+        {
+            string jsonObject = match.Value;
+
+            // Intentar extraer las propiedades de forma similar a la búsqueda por Id
+            if (TryParseTaskItem(jsonObject, out TaskItem? task))
+            {
+                if (task != null)
+                {
+                    tasks.Add(task);
+                }
+            }
+        }
+
+        return tasks;
+    }
+
+
+    /*
+    public static List<TaskItem> GetAllTasksFromFileManual(string filePath)
+    {
+        List<TaskItem> tasks = new List<TaskItem>();
+
+        if (!File.Exists(filePath))
+        {
+            Console.WriteLine("El archivo de tareas no existe.");
+            return tasks;
+        }
+
+        string jsonContent = File.ReadAllText(filePath);
+
+        // Intentar encontrar todos los objetos JSON dentro del array
+        MatchCollection matches = Regex.Matches(jsonContent, @"\{[^}]*\}");
+
+        foreach (Match match in matches)
+        {
+            string jsonObject = match.Value;
+
+            // Intentar extraer las propiedades de forma similar a la búsqueda por Id
+            if (TryParseTaskItem(jsonObject, out TaskItem? task))
+            {
+                if (task != null)
+                {
+                    tasks.Add(task);
+                }
+            }
+        }
+
+        return tasks;
+    }
+
+    private static bool TryParseTaskItem(string jsonObject, out TaskItem? task)
+    {
+        task = null;
+
+        // Extraer el Id
+        Match idMatch = Regex.Match(jsonObject, @"""Id"":\s*(\d+)");
+        if (!idMatch.Success || !int.TryParse(idMatch.Groups[1].Value, out int id))
+        {
+            return false;
+        }
+
+        // Extraer la Descripción
+        string? description = ExtractPropertyValue(jsonObject, "Description");
+        if (description == null) return false;
+
+        // Extraer el Status
+        string? status = ExtractPropertyValue(jsonObject, "Status");
+        if (status == null) status = "ToDo"; // Valor por defecto si no se encuentra
+
+        // Extraer CreatedAt
+        DateTime createdAt = ExtractDateTimePropertyValue(jsonObject, "CreatedAt");
+
+        // Extraer UpdatedAt
+        DateTime updatedAt = ExtractDateTimePropertyValue(jsonObject, "UpdatedAt");
+
+        task = new TaskItem
+        {
+            Id = id,
+            Description = description,
+            Status = status,
+            CreatedAt = createdAt,
+            UpdatedAt = updatedAt
+        };
+
+        return true;
+    }
+
+    private static string? ExtractPropertyValue(string jsonObject, string propertyName)
+    {
+        string pattern = $@"""{propertyName}"":\s*""([^""]*)""";
+        Match match = Regex.Match(jsonObject, pattern);
+        return match.Success ? match.Groups[1].Value : null;
+    }
+
+    private static DateTime ExtractDateTimePropertyValue(string jsonObject, string propertyName)
+    {
+        string pattern = $@"""{propertyName}"":\s*""([^""]*)""";
+        Match match = Regex.Match(jsonObject, pattern);
+        if (match.Success && DateTime.TryParseExact(match.Groups[1].Value, "yyyy-MM-ddTHH:mm:ssZ", null, System.Globalization.DateTimeStyles.Utc, out DateTime parsedDateTime))
+        {
+            return parsedDateTime;
+        }
+        return default;
+    }
+    
+    
+    */
 }
