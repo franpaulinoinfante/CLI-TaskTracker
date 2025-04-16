@@ -4,6 +4,7 @@ namespace CLI_TaskTracker.ConsoleApp.Models;
 
 public class TaskJsonFile
 {
+    private const string FilePath = "/home/franpaulino/Repos/CLI-TaskTracker/CLI-TaskTracker.ConsoleApp/Data/TaskJsonFile";
     private List<TaskItem> _taskItems;
 
     public TaskJsonFile(List<TaskItem> taskItems)

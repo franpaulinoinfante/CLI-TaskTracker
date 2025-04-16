@@ -1,5 +1,7 @@
 ﻿using CLI_TaskTracker.ConsoleApp.Models;
 
+var path = Directory.GetCurrentDirectory();
+
 new TaskTracker().Manage();
 
 internal class TaskTracker
