@@ -27,7 +27,7 @@ internal class TaskTracker
 
             try
             {
-                result = commandParser.Parser(input);
+                result = commandParser.Parser(input.ToLower());
                 ProcessCommand(result.command, result.parameters!);
             }
             catch (Exception ex)
@@ -44,7 +44,9 @@ internal class TaskTracker
             switch (command)
             {
                 case "add":
-                    _taskJsonFile.AddTask(new TaskItem{ Description = arguments[0]});
+                    TaskItem taskITem = new () {Id = _taskItems.Count + 1, Description = arguments[0]};
+                    _taskJsonFile.AddTask(taskITem);
+                    _taskItems.Add(taskITem);
                     Console.WriteLine("Tarea agregada");
                     break;
                 default:
