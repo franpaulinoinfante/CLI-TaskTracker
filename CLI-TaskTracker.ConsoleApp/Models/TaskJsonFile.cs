@@ -125,30 +125,30 @@ public class TaskJsonFile
         // obtener el texto json
         string jsonContent = File.ReadAllText(TaskJsonFile.FilePath);
 
-        // Intentar encontrar todos los objetos JSON dentro del array
-        MatchCollection matches = Regex.Matches(jsonContent, @"\{[^}]*\}");
-        if (string.IsNullOrWhiteSpace(jsonContent) || matches.Count == 0)
-        {
-            return null;
-        }
 
-        var result = MapTaskJsonToTaskItem(matches, taskItemId);
+        var result = MapTaskJsonToTaskItem(jsonContent, taskItemId);
 
-        return MapTaskJsonToTaskItem(matches, taskItemId);
+        return MapTaskJsonToTaskItem(jsonContent, taskItemId);
     }
 
-    private TaskItem? MapTaskJsonToTaskItem(MatchCollection matches, int taskItemId)
+    private TaskItem? MapTaskJsonToTaskItem(string jsonContent, int taskItemId)
     {
+        TaskItem? taskItem = null;
+        // Intentar encontrar todos los objetos JSON dentro del array
+        MatchCollection matches = Regex.Matches(jsonContent, @"\{[^}]*\}");
+
         foreach (Match match in matches)
         {
             string jsonObject = match.Value;
-
-            TryParseTaskItem(jsonObject, out TaskItem? task);
-
-            return task;
+            Match idMatch = Regex.Match(jsonObject, @"""Id"":\s*(\d+)");
+            if (idMatch.Success && int.TryParse(idMatch.Groups[1].Value, out int currentId) && currentId == taskItemId)
+            {
+                TryParseTaskItem(jsonObject, out TaskItem? task);
+                taskItem = task;
+            }
         }
 
-        return null; // No se encontró ningún TaskItem con el Id especificado
+        return taskItem; // No se encontró ningún TaskItem con el Id especificado
     }
 
 
@@ -189,13 +189,6 @@ public class TaskJsonFile
         return true;
     }
 
-    // private string? ExtractPropertyValue(string jsonObject, string propertyName)
-    // {
-    //     string pattern = $@"""{propertyName.Trim()}"":\s*""([^""]*)""";
-    //     Match match = Regex.Match(jsonObject, pattern);
-    //     return match.Success ? match.Groups[1].Value : null;
-    // }
-
     private string? ExtractPropertyValue(string jsonObject, string propertyName)
     {
         string pattern = $@"""{propertyName.Trim()}"":\s*""((?:\\.|[^""])*)""";
@@ -221,8 +214,7 @@ public class TaskJsonFile
 
         if (!File.Exists(TaskJsonFile.FedoraPath))
         {
-            Console.WriteLine("El archivo de tareas no existe.");
-            return tasks;
+            throw new InvalidOperationException("El archivo de tareas no existe.");
         }
 
         string jsonContent = File.ReadAllText(TaskJsonFile.FedoraPath);
@@ -247,95 +239,26 @@ public class TaskJsonFile
         return tasks;
     }
 
-
-    /*
-    public static List<TaskItem> GetAllTasksFromFileManual(string filePath)
+    internal void Update(TaskItem taskItemToUpdate)
     {
-        List<TaskItem> tasks = new List<TaskItem>();
-
-        if (!File.Exists(filePath))
+        if (!File.Exists(TaskJsonFile.FedoraPath))
         {
-            Console.WriteLine("El archivo de tareas no existe.");
-            return tasks;
+            throw new InvalidOperationException("El archivo de tareas no existe.");
         }
 
-        string jsonContent = File.ReadAllText(filePath);
+        string jsonContent = File.ReadAllText(TaskJsonFile.FedoraPath);
 
-        // Intentar encontrar todos los objetos JSON dentro del array
-        MatchCollection matches = Regex.Matches(jsonContent, @"\{[^}]*\}");
 
-        foreach (Match match in matches)
+        string pattern = $@"{{\s*""Id"":\s*{taskItemToUpdate.Id},(.*?)}}";
+        Match match = Regex.Match(jsonContent, pattern, RegexOptions.Singleline);
+
+        string updateTask = ParseToJson(taskItemToUpdate);
+
+        if (match.Success)
         {
-            string jsonObject = match.Value;
-
-            // Intentar extraer las propiedades de forma similar a la búsqueda por Id
-            if (TryParseTaskItem(jsonObject, out TaskItem? task))
-            {
-                if (task != null)
-                {
-                    tasks.Add(task);
-                }
-            }
+            string oldTask = match.Value;
+            jsonContent = jsonContent.Replace(oldTask, updateTask);
+            File.WriteAllText(TaskJsonFile.FedoraPath, jsonContent);
         }
-
-        return tasks;
     }
-
-    private static bool TryParseTaskItem(string jsonObject, out TaskItem? task)
-    {
-        task = null;
-
-        // Extraer el Id
-        Match idMatch = Regex.Match(jsonObject, @"""Id"":\s*(\d+)");
-        if (!idMatch.Success || !int.TryParse(idMatch.Groups[1].Value, out int id))
-        {
-            return false;
-        }
-
-        // Extraer la Descripción
-        string? description = ExtractPropertyValue(jsonObject, "Description");
-        if (description == null) return false;
-
-        // Extraer el Status
-        string? status = ExtractPropertyValue(jsonObject, "Status");
-        if (status == null) status = "ToDo"; // Valor por defecto si no se encuentra
-
-        // Extraer CreatedAt
-        DateTime createdAt = ExtractDateTimePropertyValue(jsonObject, "CreatedAt");
-
-        // Extraer UpdatedAt
-        DateTime updatedAt = ExtractDateTimePropertyValue(jsonObject, "UpdatedAt");
-
-        task = new TaskItem
-        {
-            Id = id,
-            Description = description,
-            Status = status,
-            CreatedAt = createdAt,
-            UpdatedAt = updatedAt
-        };
-
-        return true;
-    }
-
-    private static string? ExtractPropertyValue(string jsonObject, string propertyName)
-    {
-        string pattern = $@"""{propertyName}"":\s*""([^""]*)""";
-        Match match = Regex.Match(jsonObject, pattern);
-        return match.Success ? match.Groups[1].Value : null;
-    }
-
-    private static DateTime ExtractDateTimePropertyValue(string jsonObject, string propertyName)
-    {
-        string pattern = $@"""{propertyName}"":\s*""([^""]*)""";
-        Match match = Regex.Match(jsonObject, pattern);
-        if (match.Success && DateTime.TryParseExact(match.Groups[1].Value, "yyyy-MM-ddTHH:mm:ssZ", null, System.Globalization.DateTimeStyles.Utc, out DateTime parsedDateTime))
-        {
-            return parsedDateTime;
-        }
-        return default;
-    }
-    
-    
-    */
 }

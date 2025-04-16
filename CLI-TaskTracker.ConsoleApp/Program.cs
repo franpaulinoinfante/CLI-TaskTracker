@@ -36,36 +36,48 @@ internal class TaskTracker
             {
                 Console.WriteLine($"Error! {ex.Message}");
             }
+            finally
+            {
+                var reas = _taskJsonFile.GetAllTasksFromFile();
+            }
         } while (!result.command.Equals("salir", StringComparison.CurrentCultureIgnoreCase));
     }
 
     private void ProcessCommand(string command, string[] arguments)
     {
-        try
+        switch (command)
         {
-            switch (command)
-            {
-                case "add":
-                    _id = _taskJsonFile.GetMaxTaskIdManual() + 1;
-                    TaskItem taskITem = new () { Id = _id, Description = arguments[0]};
-                    _taskJsonFile.AddTask(taskITem);
-                    _taskItems.Add(taskITem);
-                    Console.WriteLine("Tarea agregada");
-                    break;
-                default:
-                    Console.WriteLine("Gracias por usar nuestra applicacin");
-                    break;
-            }
-        }
-        catch (Exception)
-        {
-            throw;
+            case "add":
+                _id = _taskJsonFile.GetMaxTaskIdManual() + 1;
+                TaskItem taskITem = new() { Id = _id, Description = arguments[0] };
+                _taskJsonFile.AddTask(taskITem);
+                _taskItems.Add(taskITem);
+                Console.WriteLine("Tarea agregada");
+                break;
+            case "update":
+                int.TryParse(arguments[0], out int id);
+
+                TaskItem taskItemToUpdate = _taskJsonFile.FindTaskItemById(id)!;
+                taskItemToUpdate.Description = arguments[1];
+                _taskJsonFile.Update(taskItemToUpdate);
+                break;
+            case "list" :
+                var tasks = _taskJsonFile.GetAllTasksFromFile();
+
+                Console.WriteLine("Id\tDescripción\t\tEstado\tCreada\t\t\tUltima Actualización");
+                foreach (var task in tasks)
+                {
+                    Display(task);
+                }
+                break;
+            default:
+                Console.WriteLine("Gracias por usar nuestra applicacin");
+                break;
         }
     }
 
     private static void Display(TaskItem taskItem)
     {
-        Console.WriteLine("Id\tDescripción\t\tEstado\tCreada\t\t\tUltima Actualización");
         Console.WriteLine($"{taskItem.Id}\t{taskItem.Description}\t{taskItem.Status}\t{taskItem.CreatedAt}\t{taskItem.UpdatedAt}");
     }
 

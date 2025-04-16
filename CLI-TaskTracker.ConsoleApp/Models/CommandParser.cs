@@ -27,22 +27,22 @@ public class CommandParser
         }
 
         string[] arguments = input.Split(' ', 2);
-        if (!IsValidCommand(arguments))
+        string command = arguments[0];
+        if (!IsValidCommand(command))
         {
             throw new InvalidOperationException("El comando introducido no es valido");
         }
 
-        string command = arguments[0];
         string[] parameters = GetParameters(command, arguments.Length > 1 ? arguments[1] : "");
 
-        return (arguments[0], parameters);
+        return (command, parameters);
     }
 
-    private bool IsValidCommand(string[] arguments)
+    private bool IsValidCommand(string command)
     {
-        foreach (var command in ValidCommands)
+        foreach (var commandItem in ValidCommands)
         {
-            if ((command == arguments[0]) && (arguments.Length > 0))
+            if (commandItem == command)
             {
                 return true;
             }
@@ -51,25 +51,23 @@ public class CommandParser
         return false;
     }
 
-    private string[] GetParameters(string command, string arguments) 
+    private string[] GetParameters(string command, string arguments)
     {
         switch (command)
         {
             case "add":
-                if (!Regex.IsMatch(arguments, @"^""[^""]+""\s*$"))
+                if (!IsValidArgument(arguments))
                 {
                     throw new ArgumentException("para agregar una tarea, solo debe introducir la descripción.");
                 }
 
-                return arguments.Length > 0 ? 
-                    [arguments] : 
-                    throw new ArgumentException("El comando 'add' debe tener una descripción.");
+                return [arguments];
             case "update":
-                string[] parameters = arguments.Split(' ', 2);
-                if (parameters.Length != 2)
+                if (!IsValidArgumentsForUpdate(arguments))
                 {
                     throw new ArgumentException("El comando 'update' debe tener dos parametros.");
                 }
+
                 return arguments.Split(' ', 2);
             case "delete":
                 return [arguments];
@@ -81,6 +79,23 @@ public class CommandParser
                 return [arguments];
             default:
                 return [];
-        };
+        }
+        ;
+    }
+
+    private static bool IsValidArgument(string arguments)
+    {
+        return Regex.IsMatch(arguments, @"^""[^""]+""\s*$");
+    }
+
+    private bool IsValidArgumentsForUpdate(string arguments)
+    {
+        var parameters = arguments.Split(' ', 2);
+        if ((parameters.Length != 2) || !int.TryParse(parameters[0], out _) || !IsValidArgument(parameters[1]))
+        {
+            return false;
+        }
+
+        return true;
     }
 }
