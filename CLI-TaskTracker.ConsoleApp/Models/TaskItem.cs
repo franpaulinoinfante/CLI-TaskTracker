@@ -9,7 +9,7 @@ public class TaskItem
         ModifyUpdatedAt();
     }
 
-    public int Id { get; init; }
+    public int Id { get; set; }
     public required string Description { get; set; }
     public string Status { get; set; }
     public DateTime CreatedAt { get; init; }

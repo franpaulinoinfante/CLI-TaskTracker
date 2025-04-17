@@ -4,14 +4,10 @@ new TaskTracker().Manage();
 
 internal class TaskTracker
 {
-    private int _id;
-
     private TaskJsonFile _taskJsonFile;
 
     public TaskTracker()
     {
-        _id = default;
-
         _taskJsonFile = new();
     }
 
@@ -57,8 +53,7 @@ internal class TaskTracker
         switch (command)
         {
             case "add":
-                _id = _taskJsonFile.GetMaxTaskId() + 1;
-                TaskItem taskITem = new() { Id = _id, Description = parameters[0] };
+                TaskItem taskITem = new() { Description = parameters[0] };
                 _taskJsonFile.AddTask(taskITem);
                 Display("Tarea agregada");
                 break;
@@ -89,7 +84,8 @@ internal class TaskTracker
                 Display("nuevo estado: 'realizada' ");
                 break;
             case "list" :
-                var tasks = _taskJsonFile.GetAllTasksFromFile();
+                string? parameter = string.IsNullOrWhiteSpace(parameters[0]) ? "" : parameters[0];
+                var tasks = _taskJsonFile.GetTaskItems(parameter);
                 Console.WriteLine("Id\tDescripción\t\tEstado\tCreada\t\t\tUltima Actualización");
                 foreach (var task in tasks)
                 {
@@ -107,7 +103,7 @@ internal class TaskTracker
         Console.WriteLine(message);
     }
 
-    private static void Display(TaskItem taskItem)
+    private void Display(TaskItem taskItem)
     {
         Console.WriteLine($"{taskItem.Id}\t{taskItem.Description}\t{taskItem.Status}\t{taskItem.CreatedAt}\t{taskItem.UpdatedAt}");
     }

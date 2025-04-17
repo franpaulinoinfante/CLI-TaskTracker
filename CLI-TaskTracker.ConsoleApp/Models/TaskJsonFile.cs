@@ -1,4 +1,3 @@
-using System;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -24,111 +23,62 @@ public class TaskJsonFile
         }
     }
 
-    public int GetMaxTaskId()
+    internal int MaxTaskId
     {
-        int maxId = 0;
+        get
+        {
+            int maxId = 0;
 
+            if (!File.Exists(TaskJsonFile.FilePath))
+            {
+                return maxId; // Si el archivo no existe, el máximo ID es 0
+            }
+
+            string jsonContent = File.ReadAllText(TaskJsonFile.FilePath);
+
+            // Intentar encontrar todos los objetos JSON dentro del array
+            MatchCollection matches = Regex.Matches(jsonContent, @"\{[^}]*\}");
+
+            foreach (Match match in matches)
+            {
+                string jsonObject = match.Value;
+
+                // Extraer el Id usando una expresión regular básica
+                Match idMatch = Regex.Match(jsonObject, @"""Id"":\s*(\d+)");
+                if (idMatch.Success && int.TryParse(idMatch.Groups[1].Value, out int currentId))
+                {
+                    maxId = Math.Max(maxId, currentId);
+                }
+            }
+
+            return maxId;
+        }
+    }
+
+    internal TaskItem? FindTaskItemById(int taskItemId)
+    {
         if (!File.Exists(TaskJsonFile.FilePath))
         {
-            return maxId; // Si el archivo no existe, el máximo ID es 0
+            return null;
         }
 
+        // obtener el texto json
         string jsonContent = File.ReadAllText(TaskJsonFile.FilePath);
 
         // Intentar encontrar todos los objetos JSON dentro del array
         MatchCollection matches = Regex.Matches(jsonContent, @"\{[^}]*\}");
-
         foreach (Match match in matches)
         {
             string jsonObject = match.Value;
-
-            // Extraer el Id usando una expresión regular básica
             Match idMatch = Regex.Match(jsonObject, @"""Id"":\s*(\d+)");
-            if (idMatch.Success && int.TryParse(idMatch.Groups[1].Value, out int currentId))
+            if (idMatch.Success && int.TryParse(idMatch.Groups[1].Value, out int currentId) && currentId == taskItemId)
             {
-                maxId = Math.Max(maxId, currentId);
+                return ParseToTaskItem(jsonObject);
             }
         }
-
-        return maxId;
+        
+        return null;
     }
-
-    public void AddTask(TaskItem taskItem)
-    {
-        if (taskItem is null)
-        {
-            throw new ArgumentException("Debe crear una tarea");
-        }
-
-        string newTaskJson = ParseToJson(taskItem);
-
-        if (new FileInfo(TaskJsonFile.FilePath).Length == 0)
-        {
-            File.WriteAllText(TaskJsonFile.FilePath, $"[{newTaskJson}]", Encoding.UTF8);
-        }
-        else
-        {
-            // Leer el contenido existente
-            string jsonContent = File.ReadAllText(TaskJsonFile.FilePath);
-
-            // encontrar el final del array (antes de ']')
-            int indexOfClosingBracket = jsonContent.LastIndexOf(']');
-
-            if (indexOfClosingBracket > 0)
-            {
-                // Insertar la nueva tarea JSON antes del corchete de cierre, con una coma si el array no estaba vac�o
-                AddNewJsonLine(newTaskJson, jsonContent, indexOfClosingBracket);
-            }
-            else
-            {
-                // Si no se encuentra el corchete de cierre (JSON inv�lido), simplemente sobrescribir con un nuevo array
-                File.WriteAllText(TaskJsonFile.FilePath, $"[{newTaskJson}]", Encoding.UTF8);
-            }
-        }
-    }
-
-    private static void AddNewJsonLine(string newTaskJson, string jsonContent, int indexOfClosingBracket)
-    {
-        string updateJson = jsonContent[..indexOfClosingBracket];
-        if (updateJson.LastIndexOf('{') > updateJson.LastIndexOf('['))
-        {
-            updateJson += "," + newTaskJson;
-        }
-        else
-        {
-            updateJson += newTaskJson;
-        }
-
-        updateJson += "]";
-        File.WriteAllText(FilePath, updateJson, Encoding.UTF8);
-    }
-
-    private string ParseToJson(TaskItem taskItem) => $@"{{""Id"": {taskItem.Id}, ""Description"": ""{EscapeJsonString(taskItem.Description)}"", ""Status"": ""{EscapeJsonString(taskItem.Status)}"", ""CreatedAt"": ""{taskItem.CreatedAt:yyyy-MM-ddTHH:mm:ssZ}"",""UpdatedAt"": ""{taskItem.UpdatedAt:yyyy-MM-ddTHH:mm:ssZ}""}}";
-
-    private string EscapeJsonString(string rawString)
-    {
-        return rawString.Replace("\"", string.Empty).Trim();
-    }
-
-    // private TaskItem? MapTaskJsonToTaskItem(string jsonContent, int taskItemId)
-    // {
-    //     TaskItem? taskItem = null;
-    //     // Intentar encontrar todos los objetos JSON dentro del array
-    //     MatchCollection matches = Regex.Matches(jsonContent, @"\{[^}]*\}");
-
-    //     foreach (Match match in matches)
-    //     {
-    //         string jsonObject = match.Value;
-    //         Match idMatch = Regex.Match(jsonObject, @"""Id"":\s*(\d+)");
-    //         if (idMatch.Success && int.TryParse(idMatch.Groups[1].Value, out int currentId) && currentId == taskItemId)
-    //         {
-    //             //TryParseTaskItem(jsonObject, out TaskItem? task);
-    //             //taskItem = task;
-    //         }
-    //     }
-
-    //     return taskItem; // No se encontró ningún TaskItem con el Id especificado
-    // }
 
     private TaskItem? ParseToTaskItem(string jsonObject)
     {
@@ -188,7 +138,17 @@ public class TaskJsonFile
         return default;
     }
 
-    public List<TaskItem> GetAllTasksFromFile()
+    internal List<TaskItem> GetTaskItems(string? parameter = "")
+    {
+        var list = string.IsNullOrWhiteSpace(parameter) ? 
+            GetAllTasksFromFile() : 
+            GetAllTasksFromFile()
+            .Where(t => t.Status.ToLower() == EscapeJsonString(parameter))
+            .ToList();
+        return list;
+    }
+
+    internal List<TaskItem> GetAllTasksFromFile()
     {
         List<TaskItem> tasks = new List<TaskItem>();
 
@@ -218,13 +178,72 @@ public class TaskJsonFile
         return tasks;
     }
 
-    public void Update(TaskItem taskItemToUpdate)
+    public void AddTask(TaskItem taskItem)
+    {
+        if (taskItem is null)
+        {
+            throw new ArgumentException("Debe crear una tarea");
+        }
+
+        taskItem.Id = MaxTaskId + 1;
+
+        string newTaskJson = ParseToJson(taskItem);
+
+        if (new FileInfo(TaskJsonFile.FilePath).Length == 0)
+        {
+            File.WriteAllText(TaskJsonFile.FilePath, $"[{newTaskJson}]", Encoding.UTF8);
+        }
+        else
+        {
+            // Leer el contenido existente
+            string jsonContent = File.ReadAllText(TaskJsonFile.FilePath);
+
+            // encontrar el final del array (antes de ']')
+            int indexOfClosingBracket = jsonContent.LastIndexOf(']');
+
+            if (indexOfClosingBracket > 0)
+            {
+                // Insertar la nueva tarea JSON antes del corchete de cierre, con una coma si el array no estaba vac�o
+                AddNewJsonLine(newTaskJson, jsonContent, indexOfClosingBracket);
+            }
+            else
+            {
+                // Si no se encuentra el corchete de cierre (JSON invalido), simplemente sobrescribir con un nuevo array
+                File.WriteAllText(TaskJsonFile.FilePath, $"[{newTaskJson}]", Encoding.UTF8);
+            }
+        }
+    }
+
+    private void AddNewJsonLine(string newTaskJson, string jsonContent, int indexOfClosingBracket)
+    {
+        string updateJson = jsonContent[..indexOfClosingBracket];
+        if (updateJson.LastIndexOf('{') > updateJson.LastIndexOf('['))
+        {
+            updateJson += "," + newTaskJson;
+        }
+        else
+        {
+            updateJson += newTaskJson;
+        }
+
+        updateJson += "]";
+        File.WriteAllText(FilePath, updateJson, Encoding.UTF8);
+    }
+
+    private string ParseToJson(TaskItem taskItem) => $@"{{""Id"": {taskItem.Id}, ""Description"": ""{EscapeJsonString(taskItem.Description)}"", ""Status"": ""{EscapeJsonString(taskItem.Status)}"", ""CreatedAt"": ""{taskItem.CreatedAt:yyyy-MM-ddTHH:mm:ssZ}"",""UpdatedAt"": ""{taskItem.UpdatedAt:yyyy-MM-ddTHH:mm:ssZ}""}}";
+
+    private string EscapeJsonString(string rawString)
+    {
+        return rawString.Replace("\"", string.Empty).Trim();
+    }
+
+    internal void Update(TaskItem taskItemToUpdate)
     {
         if (!File.Exists(TaskJsonFile.FedoraPath))
         {
             throw new InvalidOperationException("El archivo de tareas no existe.");
-        }
-
+        }        
+        
         string jsonContent = File.ReadAllText(TaskJsonFile.FedoraPath);
 
         string pattern = $@"{{\s*""Id"":\s*{taskItemToUpdate.Id},(.*?)}}";
@@ -238,31 +257,6 @@ public class TaskJsonFile
             jsonContent = jsonContent.Replace(oldTask, updateTask);
             File.WriteAllText(TaskJsonFile.FedoraPath, jsonContent);
         }
-    }
-
-    public TaskItem? FindTaskItemById(int taskItemId)
-    {
-        if (!File.Exists(TaskJsonFile.FilePath))
-        {
-            return null;
-        }
-
-        // obtener el texto json
-        string jsonContent = File.ReadAllText(TaskJsonFile.FilePath);
-
-        // Intentar encontrar todos los objetos JSON dentro del array
-        MatchCollection matches = Regex.Matches(jsonContent, @"\{[^}]*\}");
-        foreach (Match match in matches)
-        {
-            string jsonObject = match.Value;
-            Match idMatch = Regex.Match(jsonObject, @"""Id"":\s*(\d+)");
-            if (idMatch.Success && int.TryParse(idMatch.Groups[1].Value, out int currentId) && currentId == taskItemId)
-            {
-                return ParseToTaskItem(jsonObject);
-            }
-        }
-
-        return null;
     }
 
     internal void Delete(int id)
