@@ -83,6 +83,11 @@ public class CommandParser
                 }
                 return [arguments];
             case "mark-done":
+                parameters = arguments.Split(' ');
+                if (arguments.Length != 1 || !int.TryParse(parameters[0], out int _))
+                {
+                    throw new ArgumentException("El comando 'mark-in-progress' solo acepta un parametro 'id'");
+                }
                 return [arguments];
             case "list":
                 return [arguments];

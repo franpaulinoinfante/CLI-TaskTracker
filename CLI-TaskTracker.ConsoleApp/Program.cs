@@ -18,12 +18,12 @@ internal class TaskTracker
     internal void Manage()
     {
         DisplayHeaderMessages();
+        
+        CommandParser commandParser = new();
+        commandParser.DisplayCommands();
         (string command, string[]? parameters) arguments = (arguments.command = string.Empty, default);
         do
         {
-            CommandParser commandParser = new();
-            commandParser.DisplayCommands();
-
             string commandLine = ReadCommandLine();
 
             try
@@ -65,7 +65,7 @@ internal class TaskTracker
             case "update":
                 int.TryParse(parameters[0], out id);
                 TaskItem taskItemToUpdate = _taskJsonFile.FindTaskItemById(id)!;
-                taskItemToUpdate.Description = parameters[0];
+                taskItemToUpdate.Description = parameters[1];
                 _taskJsonFile.Update(taskItemToUpdate);
                 Display("Tarea actualizada");
                 break;
@@ -82,7 +82,10 @@ internal class TaskTracker
                 Display("nuevo estado: 'en progreso' ");
                 break;
             case "mark-done" :
-
+                int.TryParse(parameters[0], out id);
+                TaskItem taskItemToMarkDone = _taskJsonFile.FindTaskItemById(id)!;
+                taskItemToMarkDone.Status = "Realizada";
+                _taskJsonFile.Update(taskItemToMarkDone);
                 Display("nuevo estado: 'realizada' ");
                 break;
             case "list" :
