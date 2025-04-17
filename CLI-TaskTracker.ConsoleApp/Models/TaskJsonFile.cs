@@ -24,7 +24,7 @@ public class TaskJsonFile
         }
     }
 
-    public int GetMaxTaskIdManual()
+    public int GetMaxTaskId()
     {
         int maxId = 0;
 
@@ -52,7 +52,6 @@ public class TaskJsonFile
 
         return maxId;
     }
-
 
     public void AddTask(TaskItem taskItem)
     {
@@ -104,72 +103,55 @@ public class TaskJsonFile
         File.WriteAllText(FilePath, updateJson, Encoding.UTF8);
     }
 
-    private string ParseToJson(TaskItem taskItem)
-    {
-        return $@"{{""Id"":{taskItem.Id},""Description"":""{EscapeJsonString(taskItem.Description)}"", ""Status"":""{EscapeJsonString(taskItem.Status)}"", ""CreatedAt"":""{taskItem.CreatedAt:yyyy-MM-ddTHH:mm:ssZ}"",""UpdatedAt"":""{taskItem.UpdatedAt:yyyy-MM-ddTHH:mm:ssZ}""}}";
-
-    }
+    private string ParseToJson(TaskItem taskItem) => $@"{{""Id"": {taskItem.Id}, ""Description"": ""{EscapeJsonString(taskItem.Description)}"", ""Status"": ""{EscapeJsonString(taskItem.Status)}"", ""CreatedAt"": ""{taskItem.CreatedAt:yyyy-MM-ddTHH:mm:ssZ}"",""UpdatedAt"": ""{taskItem.UpdatedAt:yyyy-MM-ddTHH:mm:ssZ}""}}";
 
     private string EscapeJsonString(string rawString)
     {
-        return rawString.Replace("\"", "").Trim();
+        return rawString.Replace("\"", string.Empty).Trim();
     }
 
-    public TaskItem? FindTaskItemById(int taskItemId)
+    // private TaskItem? MapTaskJsonToTaskItem(string jsonContent, int taskItemId)
+    // {
+    //     TaskItem? taskItem = null;
+    //     // Intentar encontrar todos los objetos JSON dentro del array
+    //     MatchCollection matches = Regex.Matches(jsonContent, @"\{[^}]*\}");
+
+    //     foreach (Match match in matches)
+    //     {
+    //         string jsonObject = match.Value;
+    //         Match idMatch = Regex.Match(jsonObject, @"""Id"":\s*(\d+)");
+    //         if (idMatch.Success && int.TryParse(idMatch.Groups[1].Value, out int currentId) && currentId == taskItemId)
+    //         {
+    //             //TryParseTaskItem(jsonObject, out TaskItem? task);
+    //             //taskItem = task;
+    //         }
+    //     }
+
+    //     return taskItem; // No se encontró ningún TaskItem con el Id especificado
+    // }
+
+    private TaskItem? ParseToTaskItem(string jsonObject)
     {
-        if (!File.Exists(TaskJsonFile.FilePath))
-        {
-            return null;
-        }
-
-        // obtener el texto json
-        string jsonContent = File.ReadAllText(TaskJsonFile.FilePath);
-
-
-        var result = MapTaskJsonToTaskItem(jsonContent, taskItemId);
-
-        return MapTaskJsonToTaskItem(jsonContent, taskItemId);
-    }
-
-    private TaskItem? MapTaskJsonToTaskItem(string jsonContent, int taskItemId)
-    {
-        TaskItem? taskItem = null;
-        // Intentar encontrar todos los objetos JSON dentro del array
-        MatchCollection matches = Regex.Matches(jsonContent, @"\{[^}]*\}");
-
-        foreach (Match match in matches)
-        {
-            string jsonObject = match.Value;
-            Match idMatch = Regex.Match(jsonObject, @"""Id"":\s*(\d+)");
-            if (idMatch.Success && int.TryParse(idMatch.Groups[1].Value, out int currentId) && currentId == taskItemId)
-            {
-                TryParseTaskItem(jsonObject, out TaskItem? task);
-                taskItem = task;
-            }
-        }
-
-        return taskItem; // No se encontró ningún TaskItem con el Id especificado
-    }
-
-
-    private bool TryParseTaskItem(string jsonObject, out TaskItem? task)
-    {
-        task = null;
-
         // Extraer el Id
         Match idMatch = Regex.Match(jsonObject, @"""Id"":\s*(\d+)");
         if (!idMatch.Success || !int.TryParse(idMatch.Groups[1].Value, out int id))
         {
-            return false;
+            return null;
         }
 
         // Extraer la Descripción
         string? description = ExtractPropertyValue(jsonObject, "Description");
-        if (description == null) return false;
+        if (description == null)
+        {
+            return null;
+        }
 
         // Extraer el Status
         string? status = ExtractPropertyValue(jsonObject, "Status");
-        if (status == null) status = "ToDo"; // Valor por defecto si no se encuentra
+        if (status == null)
+        {
+            status = "ToDo"; // Valor por defecto si no se encuentra
+        }
 
         // Extraer CreatedAt
         DateTime createdAt = ExtractDateTimePropertyValue(jsonObject, "CreatedAt");
@@ -177,7 +159,7 @@ public class TaskJsonFile
         // Extraer UpdatedAt
         DateTime updatedAt = ExtractDateTimePropertyValue(jsonObject, "UpdatedAt");
 
-        task = new TaskItem
+        return new TaskItem
         {
             Id = id,
             Description = description,
@@ -185,8 +167,6 @@ public class TaskJsonFile
             CreatedAt = createdAt,
             UpdatedAt = updatedAt
         };
-
-        return true;
     }
 
     private string? ExtractPropertyValue(string jsonObject, string propertyName)
@@ -226,20 +206,19 @@ public class TaskJsonFile
         {
             string jsonObject = match.Value;
 
-            // Intentar extraer las propiedades de forma similar a la búsqueda por Id
-            if (TryParseTaskItem(jsonObject, out TaskItem? task))
+            var taskItem = ParseToTaskItem(jsonObject);
+            if (taskItem == null)
             {
-                if (task != null)
-                {
-                    tasks.Add(task);
-                }
+                throw new InvalidCastException("No se pudo convertir de Json a Objeto");
             }
+
+            tasks.Add(taskItem);
         }
 
         return tasks;
     }
 
-    internal void Update(TaskItem taskItemToUpdate)
+    public void Update(TaskItem taskItemToUpdate)
     {
         if (!File.Exists(TaskJsonFile.FedoraPath))
         {
@@ -247,7 +226,6 @@ public class TaskJsonFile
         }
 
         string jsonContent = File.ReadAllText(TaskJsonFile.FedoraPath);
-
 
         string pattern = $@"{{\s*""Id"":\s*{taskItemToUpdate.Id},(.*?)}}";
         Match match = Regex.Match(jsonContent, pattern, RegexOptions.Singleline);
@@ -260,5 +238,60 @@ public class TaskJsonFile
             jsonContent = jsonContent.Replace(oldTask, updateTask);
             File.WriteAllText(TaskJsonFile.FedoraPath, jsonContent);
         }
+    }
+
+    public TaskItem? FindTaskItemById(int taskItemId)
+    {
+        if (!File.Exists(TaskJsonFile.FilePath))
+        {
+            return null;
+        }
+
+        // obtener el texto json
+        string jsonContent = File.ReadAllText(TaskJsonFile.FilePath);
+
+        // Intentar encontrar todos los objetos JSON dentro del array
+        MatchCollection matches = Regex.Matches(jsonContent, @"\{[^}]*\}");
+        foreach (Match match in matches)
+        {
+            string jsonObject = match.Value;
+            Match idMatch = Regex.Match(jsonObject, @"""Id"":\s*(\d+)");
+            if (idMatch.Success && int.TryParse(idMatch.Groups[1].Value, out int currentId) && currentId == taskItemId)
+            {
+                return ParseToTaskItem(jsonObject);
+            }
+        }
+
+        return null;
+    }
+
+    internal void Delete(int id)
+    {
+        if (id <= 0)
+        {
+            throw new ArgumentException("Debe ingresar un id entero positivo");
+        }
+
+        string jsonContent = File.ReadAllText(TaskJsonFile.FilePath);
+
+        string pattern = $@"{{\s*""Id"":\s*{id},.*?}}";
+        Match match = Regex.Match(jsonContent, pattern, RegexOptions.Singleline);
+        if (!match.Success)
+        {
+            throw new InvalidOperationException($"Tarea con el id {id}, no encontrada");
+        }
+
+        string taskToRemove = match.Value;
+
+        // Intentar eliminar también la coma antes o después si existe
+        string cleanedJson = jsonContent.Replace($",{taskToRemove}", ""); // si está en medio
+        cleanedJson = cleanedJson.Replace($"{taskToRemove},", ""); // si está al principio
+        cleanedJson = cleanedJson.Replace(taskToRemove, "");       // si está sola
+
+        // Limpiar el arreglo para que no queden comas mal puestas
+        cleanedJson = Regex.Replace(cleanedJson, @"\[\s*,", "[");
+        cleanedJson = Regex.Replace(cleanedJson, @",\s*\]", "]");
+
+        File.WriteAllText(TaskJsonFile.FilePath, cleanedJson);
     }
 }

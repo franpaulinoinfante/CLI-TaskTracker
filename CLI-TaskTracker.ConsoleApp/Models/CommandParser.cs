@@ -8,7 +8,7 @@ public class CommandParser
     // El comando list puede tener uno de los siguientes argumentos : [done, todo, in-progres]
     private static string[] ValidCommands = ["add", "update", "delete", "mark-in-progress", "mark-done", "list", "salir"];
 
-    internal static void DisplayCommands()
+    internal void DisplayCommands()
     {
         Console.WriteLine("Los comandos que puede ejecutar son:");
         foreach (var command in ValidCommands)
@@ -53,25 +53,34 @@ public class CommandParser
 
     private string[] GetParameters(string command, string arguments)
     {
+        string[] parameters;
         switch (command)
         {
             case "add":
                 if (!IsValidArgument(arguments))
                 {
-                    throw new ArgumentException("para agregar una tarea, solo debe introducir la descripción.");
+                    throw new ArgumentException("el comand 'add', solo acepta un parametro 'descripción'.");
                 }
-
                 return [arguments];
             case "update":
                 if (!IsValidArgumentsForUpdate(arguments))
                 {
                     throw new ArgumentException("El comando 'update' debe tener doss parametros.");
                 }
-
                 return arguments.Split(' ', 2);
             case "delete":
+                parameters = arguments.Split(' ');
+                if (arguments.Length != 1 || !int.TryParse(parameters[0], out int _))
+                {
+                    throw new ArgumentException("El comando 'eliminar' solo acepta un parametro 'id'");
+                }
                 return [arguments];
-            case "mark-in-prograss":
+            case "mark-in-progress":
+                parameters = arguments.Split(' ');
+                if (arguments.Length != 1 || !int.TryParse(parameters[0], out int _))
+                {
+                    throw new ArgumentException("El comando 'mark-in-progress' solo acepta un parametro 'id'");
+                }
                 return [arguments];
             case "mark-done":
                 return [arguments];
